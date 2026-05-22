@@ -1,9 +1,41 @@
 package api
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+
+	"github.com/pscarreira/gobid/internal/jsonutils"
+	"github.com/pscarreira/gobid/internal/services"
+	"github.com/pscarreira/gobid/internal/usecase/user"
+)
 
 func (api *Api) handleSignUpUser(w http.ResponseWriter, r *http.Request) {
-	panic("Todo: Implement handleSignUpUser")
+	data, problems, err := jsonutils.DecodeValidJson[user.CreateUserReq](r)
+	if err != nil {
+		if problems == nil {
+			problems = map[string]string{"error": err.Error()}
+		}
+		_ = jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, problems)
+		return
+	}
+
+	id, err := api.UsersService.CreateUser(
+		r.Context(),
+		data.Username,
+		data.Password,
+		data.Email,
+		data.Bio,
+	)
+
+	if err != nil {
+		if errors.Is(err, services.ErrDuplicatedEmailOrPassword) {
+			_ = jsonutils.EncodeJson(w, r, http.StatusConflict, map[string]string{"error": "email or username already in use"})
+			return
+		}
+		_ = jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+	}
+
+	_ = jsonutils.EncodeJson(w, r, http.StatusCreated, map[string]any{"id": id})
 }
 
 func (api *Api) handleLoginUser(w http.ResponseWriter, r *http.Request) {
