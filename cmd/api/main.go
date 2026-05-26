@@ -53,9 +53,10 @@ func main() {
 	s.Cookie.Secure = false
 
 	api := api.Api{
-		Router:       chi.NewMux(),
-		UsersService: services.NewUsersService(pool),
-		Sessions:     s,
+		Router:          chi.NewMux(),
+		UsersService:    services.NewUsersService(pool),
+		ProductsService: services.NewProductsService(pool),
+		Sessions:        s,
 	}
 
 	api.BindRoutes()
