@@ -1,10 +1,13 @@
 package api
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pscarreira/gobid/internal/jsonutils"
+	"github.com/pscarreira/gobid/internal/services"
 	"github.com/pscarreira/gobid/internal/usecase/product"
 )
 
@@ -21,7 +24,7 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := api.ProductsService.CreateProduct(
+	product_id, err := api.ProductsService.CreateProduct(
 		r.Context(),
 		userID,
 		data.ProductName,
@@ -34,5 +37,18 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonutils.EncodeJson(w, r, http.StatusCreated, map[string]string{"id": id.String()})
+	ctx, _ := context.WithDeadline(context.Background(), data.AuctionEnd)
+
+	auctionRoom := services.NewAuctionRoom(ctx, product_id, api.BidsService)
+
+	go auctionRoom.Run()
+
+	api.AuctionLobby.Lock()
+	api.AuctionLobby.Rooms[product_id] = auctionRoom
+	api.AuctionLobby.Unlock()
+
+	jsonutils.EncodeJson(w, r, http.StatusCreated, map[string]string{
+		"message": "product created successfully. auction room created and will end until " + data.AuctionEnd.Format(time.Kitchen),
+		"id":      product_id.String(),
+	})
 }

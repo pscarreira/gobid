@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	ErrProductNotFound = errors.New("product not found")
-	ErrBidIsTooLow     = errors.New("bid amount must be greater than current highest bid")
+	ErrBidIsTooLow = errors.New("bid amount must be greater than current highest bid")
 )
 
 type BidsService struct {
