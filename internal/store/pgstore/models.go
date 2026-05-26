@@ -8,7 +8,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Bid struct {
+	ID        uuid.UUID          `json:"id"`
+	ProductID uuid.UUID          `json:"product_id"`
+	BidderID  uuid.UUID          `json:"bidder_id"`
+	BidAmount float64            `json:"bid_amount"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
 
 type Product struct {
 	ID          uuid.UUID `json:"id"`
